@@ -1,0 +1,99 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Schritt 1: Grundeinstellungen",
+        "description": "Lies den aktuellen Stand deines **echten Stromzählers** ab und wähle deine smarten Stecker-Sensoren aus.",
+        "data": {
+          "initial_kwh": "Aktueller Zählerstand (kWh)",
+          "power_sensors": "Leistungs-Sensoren der smarten Stecker (Watt)"
+        },
+        "data_description": {
+          "initial_kwh": "Aktuellen Stand vom echten Zähler ablesen (z.B. 4821.337)",
+          "power_sensors": "Nur Sensoren mit Einheit Watt auswählen"
+        }
+      },
+      "profiles": {
+        "title": "Schritt 2: Tageszeit-Profile",
+        "description": "Wie viel Strom verbrauchst du typischerweise zu jeder Tageszeit? Dieser Wert gilt als Grundlast, **wenn jemand zuhause ist**.",
+        "data": {
+          "profile_morning": "🌅 Morgen (06:00 – 09:59 Uhr)",
+          "profile_day":     "☀️ Tag (10:00 – 17:59 Uhr)",
+          "profile_evening": "🌆 Abend (18:00 – 22:59 Uhr)",
+          "profile_night":   "🌙 Nacht (23:00 – 05:59 Uhr)"
+        },
+        "data_description": {
+          "profile_morning": "Frühstück, Kaffeemaschine, Licht: z.B. 120W",
+          "profile_day":     "Alle bei der Arbeit / unterwegs: z.B. 80W",
+          "profile_evening": "TV, Kochen, Beleuchtung: z.B. 200W",
+          "profile_night":   "Reiner Standby: z.B. 50W"
+        }
+      },
+      "presence": {
+        "title": "Schritt 3: Anwesenheit",
+        "description": "Welche Personen sollen getrackt werden, und wie viel Extra-Verbrauch entsteht pro Person zuhause?",
+        "data": {
+          "presence_persons":     "Personen (person.*-Entities)",
+          "presence_extra_watts": "Extra-Verbrauch pro Person zuhause (Watt)",
+          "presence_away_factor": "Faktor wenn niemand zuhause ist (0 = aus, 1 = voll)"
+        },
+        "data_description": {
+          "presence_extra_watts": "Licht, TV, Ladegeräte die eine Person typisch einschaltet: z.B. 80W",
+          "presence_away_factor": "0.6 = 60% des Tagesprofils läuft auch wenn alle weg sind (Standby, Kühlschrank etc.)"
+        }
+      }
+    },
+    "error": {
+      "invalid_kwh": "Der kWh-Wert muss 0 oder größer sein."
+    }
+  },
+  "options": {
+    "step": {
+      "profiles": {
+        "title": "Tageszeit-Profile anpassen",
+        "data": {
+          "profile_morning": "🌅 Morgen (06–10 Uhr)",
+          "profile_day":     "☀️ Tag (10–18 Uhr)",
+          "profile_evening": "🌆 Abend (18–23 Uhr)",
+          "profile_night":   "🌙 Nacht (23–06 Uhr)"
+        }
+      },
+      "presence": {
+        "title": "Anwesenheit anpassen",
+        "data": {
+          "presence_persons":     "Personen",
+          "presence_extra_watts": "Extra-Watt pro Person zuhause",
+          "presence_away_factor": "Faktor bei Abwesenheit"
+        }
+      },
+      "plugs": {
+        "title": "Smarte Stecker anpassen",
+        "data": {
+          "power_sensors": "Leistungs-Sensoren (Watt)"
+        }
+      }
+    }
+  },
+  "services": {
+    "set_meter_value": {
+      "name": "Zählerstand setzen",
+      "description": "Setzt den simulierten Zählerstand direkt auf einen kWh-Wert.",
+      "fields": {
+        "kwh_value": {
+          "name": "kWh-Wert",
+          "description": "Neuer Zählerstand in Kilowattstunden."
+        }
+      }
+    },
+    "calibrate": {
+      "name": "Kalibrieren (echten Zähler ablesen)",
+      "description": "Synchronisiert den Simulator mit dem echten Stromzähler. Zählerstand ablesen und hier eingeben.",
+      "fields": {
+        "kwh_value": {
+          "name": "Echter Zählerstand (kWh)",
+          "description": "Der aktuell vom echten Zähler abgelesene Stand."
+        }
+      }
+    }
+  }
+}
