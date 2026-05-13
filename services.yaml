@@ -1,10 +1,10 @@
 set_meter_value:
   name: Zählerstand setzen
-  description: Setzt den simulierten Stromzähler auf einen bestimmten kWh-Wert.
+  description: Setzt den simulierten Stromzähler direkt auf einen kWh-Wert (ohne Lernen).
   fields:
     kwh_value:
       name: kWh-Wert
-      description: Der neue Zählerstand in Kilowattstunden.
+      description: Neuer Zählerstand in Kilowattstunden.
       required: true
       selector:
         number:
@@ -15,15 +15,15 @@ set_meter_value:
           mode: box
 
 calibrate:
-  name: Kalibrieren
+  name: Kalibrieren & Lernen
   description: >
-    Synchronisiert den Simulator mit dem echten physischen Stromzähler.
-    Einfach den aktuellen Stand ablesen und eingeben — der Simulator
-    springt auf diesen Wert und läuft ab dann mit den Live-Werten weiter.
+    Synchronisiert den Simulator mit dem echten Stromzähler UND löst das
+    Lernsystem aus. Ab der 3. Kalibrierung werden die Profile gezielt für
+    den Tageszeit-Slot angepasst, der am meisten zur Abweichung beigetragen hat.
   fields:
     kwh_value:
       name: Echter Zählerstand (kWh)
-      description: Der aktuell vom echten Zähler abgelesene Stand.
+      description: Den aktuellen Stand vom echten Stromzähler ablesen und hier eingeben.
       required: true
       selector:
         number:
