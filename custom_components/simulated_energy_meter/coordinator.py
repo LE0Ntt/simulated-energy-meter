@@ -32,6 +32,7 @@ Phase 2 — ≥ LEARNING_MIN_CALIBRATIONS:
 A persistent HA notification summarises every adaptation so the user can see
 what changed. Adjustments are also written to the debug log.
 """
+
 from __future__ import annotations
 
 import logging
@@ -73,12 +74,17 @@ _LOGGER = logging.getLogger(__name__)
 STORAGE_VERSION = 2
 STORAGE_KEY = f"{DOMAIN}_{{entry_id}}"
 
-ALL_SLOTS = (CONF_PROFILE_MORNING, CONF_PROFILE_DAY, CONF_PROFILE_EVENING, CONF_PROFILE_NIGHT)
+ALL_SLOTS = (
+    CONF_PROFILE_MORNING,
+    CONF_PROFILE_DAY,
+    CONF_PROFILE_EVENING,
+    CONF_PROFILE_NIGHT,
+)
 SLOT_NAMES = {
     CONF_PROFILE_MORNING: "Morgen",
-    CONF_PROFILE_DAY:     "Tag",
+    CONF_PROFILE_DAY: "Tag",
     CONF_PROFILE_EVENING: "Abend",
-    CONF_PROFILE_NIGHT:   "Nacht",
+    CONF_PROFILE_NIGHT: "Nacht",
 }
 
 
@@ -142,7 +148,9 @@ class EnergyMeterCoordinator:
         self._current_slot: str = CONF_PROFILE_NIGHT
         self._unavailable_sensors: list[str] = []
 
-        self._store = Store(hass, STORAGE_VERSION, STORAGE_KEY.format(entry_id=entry_id))
+        self._store = Store(
+            hass, STORAGE_VERSION, STORAGE_KEY.format(entry_id=entry_id)
+        )
         self._listeners: list = []
 
     # ──────────────────────────────────────────────────────────────────────────
@@ -165,7 +173,9 @@ class EnergyMeterCoordinator:
                 key = f"learned_{slot}"
                 if key in stored:
                     self._profiles[slot] = stored[key]
-                    _LOGGER.debug("Restored learned profile %s = %.1fW", slot, stored[key])
+                    _LOGGER.debug(
+                        "Restored learned profile %s = %.1fW", slot, stored[key]
+                    )
 
             # Restore per-slot accumulators
             for slot in ALL_SLOTS:
@@ -179,12 +189,16 @@ class EnergyMeterCoordinator:
                     now = dt_util.utcnow()
                     offline_h = (now - last).total_seconds() / 3600
                     if 0 < offline_h < 168:
-                        offline_w = self._profiles[CONF_PROFILE_NIGHT] * self._presence_away_factor
+                        offline_w = (
+                            self._profiles[CONF_PROFILE_NIGHT]
+                            * self._presence_away_factor
+                        )
                         offline_kwh = (offline_w / 1000) * offline_h
                         self._total_kwh += offline_kwh
                         _LOGGER.info(
                             "Offline %.2fh → +%.4f kWh (night standby estimate)",
-                            offline_h, offline_kwh,
+                            offline_h,
+                            offline_kwh,
                         )
                 except ValueError:
                     pass
@@ -300,7 +314,10 @@ class EnergyMeterCoordinator:
             "[%s] %s | profile=%.0fW presence=%.0fW plugs=%.0fW → %.0fW | total=%.3fkWh",
             dt_util.as_local(now).strftime("%H:%M"),
             SLOT_NAMES[slot],
-            effective_profile_w, presence_w, plug_w, total_w,
+            effective_profile_w,
+            presence_w,
+            plug_w,
+            total_w,
             self._total_kwh,
         )
 
@@ -317,14 +334,19 @@ class EnergyMeterCoordinator:
 
         _LOGGER.info(
             "Calibration #%d: simulated=%.3f real=%.3f drift=%.3f kWh",
-            self._calibration_count, simulated_kwh, real_kwh, drift_kwh,
+            self._calibration_count,
+            simulated_kwh,
+            real_kwh,
+            drift_kwh,
         )
 
         # Only adapt if drift is meaningful (> 0.1 kWh)
         if abs(drift_kwh) > 0.1:
             await self._adapt_profiles(drift_kwh)
         else:
-            _LOGGER.info("Drift %.3f kWh below threshold — profiles unchanged", drift_kwh)
+            _LOGGER.info(
+                "Drift %.3f kWh below threshold — profiles unchanged", drift_kwh
+            )
 
         # Reset state
         self._total_kwh = real_kwh
@@ -347,7 +369,9 @@ class EnergyMeterCoordinator:
 
         use_targeted = self._calibration_count >= LEARNING_MIN_CALIBRATIONS
         mode = "targeted (slot-aware)" if use_targeted else "proportional (simple)"
-        _LOGGER.info("Learning mode: %s (calibration #%d)", mode, self._calibration_count)
+        _LOGGER.info(
+            "Learning mode: %s (calibration #%d)", mode, self._calibration_count
+        )
 
         changes: dict[str, tuple[float, float]] = {}  # slot → (old_w, new_w)
 
@@ -381,7 +405,11 @@ class EnergyMeterCoordinator:
 
             _LOGGER.info(
                 "Profile %s: %.1fW → %.1fW (correction %.1fW, dampened %.1fW)",
-                SLOT_NAMES[slot], old_w, new_w, correction_w, dampened_w,
+                SLOT_NAMES[slot],
+                old_w,
+                new_w,
+                correction_w,
+                dampened_w,
             )
 
         # ── Send HA notification ───────────────────────────────────────────────

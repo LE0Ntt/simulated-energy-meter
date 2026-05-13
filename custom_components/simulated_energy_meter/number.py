@@ -1,4 +1,5 @@
 """Number platform — live-editable time-profile watts."""
+
 from __future__ import annotations
 
 from homeassistant.components.number import NumberEntity, NumberMode
@@ -25,12 +26,31 @@ from .const import (
     DEFAULT_PRESENCE_AWAY_FACTOR,
 )
 
-
 _PROFILE_ENTITIES = [
-    (CONF_PROFILE_MORNING, "Profil: Morgen (06–10 Uhr)", "mdi:weather-sunset-up",  DEFAULT_PROFILE_MORNING),
-    (CONF_PROFILE_DAY,     "Profil: Tag (10–18 Uhr)",    "mdi:weather-sunny",       DEFAULT_PROFILE_DAY),
-    (CONF_PROFILE_EVENING, "Profil: Abend (18–23 Uhr)",  "mdi:weather-night",       DEFAULT_PROFILE_EVENING),
-    (CONF_PROFILE_NIGHT,   "Profil: Nacht (23–06 Uhr)",  "mdi:moon-waning-crescent",DEFAULT_PROFILE_NIGHT),
+    (
+        CONF_PROFILE_MORNING,
+        "Profil: Morgen (06–10 Uhr)",
+        "mdi:weather-sunset-up",
+        DEFAULT_PROFILE_MORNING,
+    ),
+    (
+        CONF_PROFILE_DAY,
+        "Profil: Tag (10–18 Uhr)",
+        "mdi:weather-sunny",
+        DEFAULT_PROFILE_DAY,
+    ),
+    (
+        CONF_PROFILE_EVENING,
+        "Profil: Abend (18–23 Uhr)",
+        "mdi:weather-night",
+        DEFAULT_PROFILE_EVENING,
+    ),
+    (
+        CONF_PROFILE_NIGHT,
+        "Profil: Nacht (23–06 Uhr)",
+        "mdi:moon-waning-crescent",
+        DEFAULT_PROFILE_NIGHT,
+    ),
 ]
 
 
@@ -97,15 +117,35 @@ class ProfileWattsNumber(NumberEntity):
 
         # Build updated profiles dict — use this entity's new value for its own key
         profiles = {
-            CONF_PROFILE_MORNING: self._attr_native_value if self._conf_key == CONF_PROFILE_MORNING else _get(CONF_PROFILE_MORNING, DEFAULT_PROFILE_MORNING),
-            CONF_PROFILE_DAY:     self._attr_native_value if self._conf_key == CONF_PROFILE_DAY     else _get(CONF_PROFILE_DAY,     DEFAULT_PROFILE_DAY),
-            CONF_PROFILE_EVENING: self._attr_native_value if self._conf_key == CONF_PROFILE_EVENING else _get(CONF_PROFILE_EVENING, DEFAULT_PROFILE_EVENING),
-            CONF_PROFILE_NIGHT:   self._attr_native_value if self._conf_key == CONF_PROFILE_NIGHT   else _get(CONF_PROFILE_NIGHT,   DEFAULT_PROFILE_NIGHT),
+            CONF_PROFILE_MORNING: (
+                self._attr_native_value
+                if self._conf_key == CONF_PROFILE_MORNING
+                else _get(CONF_PROFILE_MORNING, DEFAULT_PROFILE_MORNING)
+            ),
+            CONF_PROFILE_DAY: (
+                self._attr_native_value
+                if self._conf_key == CONF_PROFILE_DAY
+                else _get(CONF_PROFILE_DAY, DEFAULT_PROFILE_DAY)
+            ),
+            CONF_PROFILE_EVENING: (
+                self._attr_native_value
+                if self._conf_key == CONF_PROFILE_EVENING
+                else _get(CONF_PROFILE_EVENING, DEFAULT_PROFILE_EVENING)
+            ),
+            CONF_PROFILE_NIGHT: (
+                self._attr_native_value
+                if self._conf_key == CONF_PROFILE_NIGHT
+                else _get(CONF_PROFILE_NIGHT, DEFAULT_PROFILE_NIGHT)
+            ),
         }
         coordinator.update_config(
             profiles=profiles,
             power_sensors=_get(CONF_POWER_SENSORS, []),
             presence_persons=_get(CONF_PRESENCE_PERSONS, []),
-            presence_extra_watts=_get(CONF_PRESENCE_EXTRA_WATTS, DEFAULT_PRESENCE_EXTRA_WATTS),
-            presence_away_factor=_get(CONF_PRESENCE_AWAY_FACTOR, DEFAULT_PRESENCE_AWAY_FACTOR),
+            presence_extra_watts=_get(
+                CONF_PRESENCE_EXTRA_WATTS, DEFAULT_PRESENCE_EXTRA_WATTS
+            ),
+            presence_away_factor=_get(
+                CONF_PRESENCE_AWAY_FACTOR, DEFAULT_PRESENCE_AWAY_FACTOR
+            ),
         )
