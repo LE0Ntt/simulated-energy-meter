@@ -1,15 +1,16 @@
-"""Number platform — live-editable time-profile watts."""
+"""Number platform — live-editable time-profile watts and meter calibration."""
 
 from __future__ import annotations
 
 from homeassistant.components.number import NumberEntity, NumberMode
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import UnitOfPower
-from homeassistant.core import HomeAssistant
+from homeassistant.const import UnitOfEnergy, UnitOfPower
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import (
     DOMAIN,
+    CONF_INITIAL_KWH,
     CONF_PROFILE_MORNING,
     CONF_PROFILE_DAY,
     CONF_PROFILE_EVENING,
@@ -66,6 +67,7 @@ async def async_setup_entry(
         ProfileWattsNumber(hass, entry, conf_key, name, icon, _get(conf_key, default))
         for conf_key, name, icon, default in _PROFILE_ENTITIES
     ]
+    entities.append(MeterReadingNumber(hass, entry))
     async_add_entities(entities)
 
 
@@ -149,3 +151,51 @@ class ProfileWattsNumber(NumberEntity):
                 CONF_PRESENCE_AWAY_FACTOR, DEFAULT_PRESENCE_AWAY_FACTOR
             ),
         )
+
+
+class MeterReadingNumber(NumberEntity):
+    """Number entity to calibrate the meter to the real reading.
+
+    Displays the current simulated total and, when a new value is set,
+    calls async_calibrate so the adaptive learning system adjusts profiles.
+    """
+
+    _attr_mode = NumberMode.BOX
+    _attr_native_min_value = 0
+    _attr_native_max_value = 999999
+    _attr_native_step = 0.001
+    _attr_native_unit_of_measurement = UnitOfEnergy.KILO_WATT_HOUR
+    _attr_has_entity_name = True
+    _attr_icon = "mdi:counter"
+
+    def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
+        self.hass = hass
+        self._entry = entry
+        self._attr_unique_id = f"{entry.entry_id}_meter_input"
+        self._attr_name = "Zählerstand (Kalibrierung)"
+        self._attr_native_value = entry.data.get(CONF_INITIAL_KWH, 0.0)
+        self._attr_device_info = {
+            "identifiers": {(DOMAIN, entry.entry_id)},
+            "name": "Simulated Energy Meter",
+            "manufacturer": "Custom Integration",
+            "model": "Time-Profile + Presence",
+        }
+
+    async def async_added_to_hass(self) -> None:
+        coordinator = self.hass.data[DOMAIN][self._entry.entry_id].get("coordinator")
+        if coordinator:
+            self._attr_native_value = coordinator.total_kwh
+            coordinator.register_listener(self._on_coordinator_update)
+            self.async_write_ha_state()
+
+    @callback
+    def _on_coordinator_update(self) -> None:
+        coordinator = self.hass.data[DOMAIN][self._entry.entry_id].get("coordinator")
+        if coordinator:
+            self._attr_native_value = coordinator.total_kwh
+            self.async_write_ha_state()
+
+    async def async_set_native_value(self, value: float) -> None:
+        coordinator = self.hass.data[DOMAIN][self._entry.entry_id].get("coordinator")
+        if coordinator:
+            await coordinator.async_calibrate(value)
