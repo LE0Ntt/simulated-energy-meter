@@ -25,6 +25,12 @@ CONF_PRESENCE_AWAY_FACTOR   = "presence_away_factor"
 DEFAULT_PRESENCE_EXTRA_WATTS  = 80.0
 DEFAULT_PRESENCE_AWAY_FACTOR  = 0.6
 
+# ── Light estimation ──────────────────────────────────────────────────────────
+CONF_LIGHT_ENTITIES         = "light_entities"
+CONF_LIGHT_WATTS            = "light_watts"     # watts per active bulb/group
+
+DEFAULT_LIGHT_WATTS         = 8.0
+
 # ── Learning system ───────────────────────────────────────────────────────────
 LEARNING_MIN_CALIBRATIONS   = 3        # need at least this many before slot-targeted learning
 LEARNING_DAMPING            = 0.4      # how strongly one calibration shifts profiles (0–1)
@@ -39,8 +45,10 @@ ATTR_CURRENT_POWER_W        = "current_power_w"
 ATTR_PROFILE_POWER_W        = "profile_power_w"
 ATTR_PRESENCE_POWER_W       = "presence_power_w"
 ATTR_SMART_PLUG_POWER_W     = "smart_plug_power_w"
+ATTR_LIGHT_POWER_W          = "light_power_w"
 ATTR_SENSOR_BREAKDOWN       = "sensor_breakdown"
 ATTR_ACTIVE_PERSONS         = "active_persons"
+ATTR_ACTIVE_LIGHTS          = "active_lights"
 ATTR_PERSONS_HOME           = "persons_home"
 ATTR_CURRENT_TIME_SLOT      = "current_time_slot"
 ATTR_LAST_CALIBRATION       = "last_calibration"

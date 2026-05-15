@@ -111,6 +111,8 @@ class EnergyMeterCoordinator:
         presence_persons: list[str],
         presence_extra_watts: float,
         presence_away_factor: float,
+        light_entities: list[str] | None = None,
+        light_watts: float = 8.0,
     ) -> None:
         self.hass = hass
         self.entry_id = entry_id
@@ -121,6 +123,8 @@ class EnergyMeterCoordinator:
         self._presence_persons: list[str] = list(presence_persons)
         self._presence_extra_watts: float = presence_extra_watts
         self._presence_away_factor: float = presence_away_factor
+        self._light_entities: list[str] = list(light_entities or [])
+        self._light_watts: float = light_watts
 
         # ── Persistent state ──────────────────────────────────────────────────
         self._total_kwh: float = initial_kwh
@@ -142,8 +146,10 @@ class EnergyMeterCoordinator:
         self._profile_power_w: float = 0.0
         self._presence_power_w: float = 0.0
         self._smart_plug_power_w: float = 0.0
+        self._light_power_w: float = 0.0
         self._sensor_breakdown: dict[str, float] = {}
         self._active_persons: list[str] = []
+        self._active_lights: list[str] = []
         self._persons_home: int = 0
         self._current_slot: str = CONF_PROFILE_NIGHT
         self._unavailable_sensors: list[str] = []
@@ -181,6 +187,7 @@ class EnergyMeterCoordinator:
             for slot in ALL_SLOTS:
                 self._slot_profile_kwh[slot] = stored.get(f"acc_kwh_{slot}", 0.0)
                 self._slot_hours[slot] = stored.get(f"acc_h_{slot}", 0.0)
+
 
             last_str = stored.get("last_update")
             if last_str:
@@ -220,6 +227,9 @@ class EnergyMeterCoordinator:
         presence_persons: list[str],
         presence_extra_watts: float,
         presence_away_factor: float,
+        light_entities: list[str] | None = None,
+        light_watts: float | None = None,
+        device_estimate_entities: list[str] | None = None,
     ) -> None:
         """Hot-update config (called from options flow or number entities)."""
         self._profiles = dict(profiles)
@@ -227,6 +237,14 @@ class EnergyMeterCoordinator:
         self._presence_persons = list(presence_persons)
         self._presence_extra_watts = presence_extra_watts
         self._presence_away_factor = presence_away_factor
+        if light_entities is not None:
+            self._light_entities = list(light_entities)
+        if light_watts is not None:
+            self._light_watts = light_watts
+
+    def set_light_watts(self, watts: float) -> None:
+        """Update estimated watts per active light."""
+        self._light_watts = watts
 
     # ──────────────────────────────────────────────────────────────────────────
     # Listeners
@@ -286,7 +304,15 @@ class EnergyMeterCoordinator:
             except (ValueError, TypeError):
                 unavailable.append(eid)
 
-        total_w = effective_profile_w + presence_w + plug_w
+        # Lights
+        active_lights: list[str] = []
+        for eid in self._light_entities:
+            state = self.hass.states.get(eid)
+            if state and state.state == "on":
+                active_lights.append(eid)
+        light_w = len(active_lights) * self._light_watts
+
+        total_w = effective_profile_w + presence_w + plug_w + light_w
         kwh_delta = (total_w / 1000) * elapsed_h
 
         # ── Update accumulators for learning ──────────────────────────────────
@@ -300,9 +326,11 @@ class EnergyMeterCoordinator:
         self._profile_power_w = round(effective_profile_w, 1)
         self._presence_power_w = round(presence_w, 1)
         self._smart_plug_power_w = round(plug_w, 1)
+        self._light_power_w = round(light_w, 1)
         self._current_power_w = round(total_w, 1)
         self._sensor_breakdown = breakdown
         self._active_persons = persons_home
+        self._active_lights = active_lights
         self._persons_home = len(persons_home)
         self._unavailable_sensors = unavailable
         self._last_update = now
@@ -507,6 +535,18 @@ class EnergyMeterCoordinator:
     @property
     def current_time_slot(self) -> str:
         return SLOT_NAMES.get(self._current_slot, self._current_slot)
+
+    @property
+    def light_power_w(self) -> float:
+        return self._light_power_w
+
+    @property
+    def active_lights(self) -> list[str]:
+        return self._active_lights
+
+    @property
+    def light_watts(self) -> float:
+        return self._light_watts
 
     @property
     def unavailable_sensors(self) -> list[str]:

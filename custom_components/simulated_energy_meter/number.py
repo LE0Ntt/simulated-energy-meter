@@ -19,12 +19,15 @@ from .const import (
     CONF_PRESENCE_PERSONS,
     CONF_PRESENCE_EXTRA_WATTS,
     CONF_PRESENCE_AWAY_FACTOR,
+    CONF_LIGHT_ENTITIES,
+    CONF_LIGHT_WATTS,
     DEFAULT_PROFILE_MORNING,
     DEFAULT_PROFILE_DAY,
     DEFAULT_PROFILE_EVENING,
     DEFAULT_PROFILE_NIGHT,
     DEFAULT_PRESENCE_EXTRA_WATTS,
     DEFAULT_PRESENCE_AWAY_FACTOR,
+    DEFAULT_LIGHT_WATTS,
 )
 
 _PROFILE_ENTITIES = [
@@ -68,6 +71,7 @@ async def async_setup_entry(
         for conf_key, name, icon, default in _PROFILE_ENTITIES
     ]
     entities.append(MeterReadingNumber(hass, entry))
+    entities.append(LightWattsNumber(hass, entry, _get(CONF_LIGHT_WATTS, DEFAULT_LIGHT_WATTS)))
     async_add_entities(entities)
 
 
@@ -199,3 +203,35 @@ class MeterReadingNumber(NumberEntity):
         coordinator = self.hass.data[DOMAIN][self._entry.entry_id].get("coordinator")
         if coordinator:
             await coordinator.async_calibrate(value)
+
+
+class LightWattsNumber(NumberEntity):
+    """Watts assumed per active light entity."""
+
+    _attr_mode = NumberMode.BOX
+    _attr_native_min_value = 0
+    _attr_native_max_value = 500
+    _attr_native_step = 1
+    _attr_native_unit_of_measurement = UnitOfPower.WATT
+    _attr_has_entity_name = True
+    _attr_icon = "mdi:lightbulb"
+
+    def __init__(self, hass: HomeAssistant, entry: ConfigEntry, value: float) -> None:
+        self.hass = hass
+        self._entry = entry
+        self._attr_unique_id = f"{entry.entry_id}_light_watts"
+        self._attr_name = "Watt pro Lampe"
+        self._attr_native_value = value
+        self._attr_device_info = {
+            "identifiers": {(DOMAIN, entry.entry_id)},
+            "name": "Simulated Energy Meter",
+            "manufacturer": "Custom Integration",
+            "model": "Time-Profile + Presence",
+        }
+
+    async def async_set_native_value(self, value: float) -> None:
+        self._attr_native_value = value
+        self.async_write_ha_state()
+        coordinator = self.hass.data[DOMAIN][self._entry.entry_id].get("coordinator")
+        if coordinator:
+            coordinator.set_light_watts(value)

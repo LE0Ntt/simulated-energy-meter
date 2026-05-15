@@ -21,12 +21,15 @@ from .const import (
     CONF_PRESENCE_PERSONS,
     CONF_PRESENCE_EXTRA_WATTS,
     CONF_PRESENCE_AWAY_FACTOR,
+    CONF_LIGHT_ENTITIES,
+    CONF_LIGHT_WATTS,
     DEFAULT_PROFILE_MORNING,
     DEFAULT_PROFILE_DAY,
     DEFAULT_PROFILE_EVENING,
     DEFAULT_PROFILE_NIGHT,
     DEFAULT_PRESENCE_EXTRA_WATTS,
     DEFAULT_PRESENCE_AWAY_FACTOR,
+    DEFAULT_LIGHT_WATTS,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -107,7 +110,7 @@ class SimulatedEnergyMeterConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     ) -> config_entries.FlowResult:
         if user_input is not None:
             self._data.update(user_input)
-            return self.async_create_entry(title="Simulated Energy Meter", data=self._data)
+            return await self.async_step_lights()
 
         return self.async_show_form(
             step_id="presence",
@@ -120,6 +123,30 @@ class SimulatedEnergyMeterConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     selector.NumberSelectorConfig(
                         min=0.0, max=1.0, step=0.05,
                         mode=selector.NumberSelectorMode.SLIDER,
+                    )
+                ),
+            }),
+        )
+
+    # ── Step 4: Lights ────────────────────────────────────────────────────────
+    async def async_step_lights(
+        self, user_input: dict[str, Any] | None = None
+    ) -> config_entries.FlowResult:
+        if user_input is not None:
+            self._data.update(user_input)
+            return self.async_create_entry(title="Simulated Energy Meter", data=self._data)
+
+        return self.async_show_form(
+            step_id="lights",
+            data_schema=vol.Schema({
+                vol.Optional(CONF_LIGHT_ENTITIES, default=[]): selector.EntitySelector(
+                    selector.EntitySelectorConfig(domain="light", multiple=True)
+                ),
+                vol.Required(CONF_LIGHT_WATTS, default=DEFAULT_LIGHT_WATTS): selector.NumberSelector(
+                    selector.NumberSelectorConfig(
+                        min=0, max=500, step=1,
+                        unit_of_measurement="W",
+                        mode=selector.NumberSelectorMode.BOX,
                     )
                 ),
             }),
@@ -188,10 +215,24 @@ class SimulatedEnergyMeterOptionsFlow(config_entries.OptionsFlow):
     ) -> config_entries.FlowResult:
         if user_input is not None:
             self._data.update(user_input)
-            # Push changes into live coordinator immediately
+            return await self.async_step_lights()
+
+        return self.async_show_form(
+            step_id="plugs",
+            data_schema=vol.Schema({
+                vol.Optional(CONF_POWER_SENSORS, default=self._get(CONF_POWER_SENSORS, [])): selector.EntitySelector(
+                    selector.EntitySelectorConfig(domain="sensor", device_class="power", multiple=True)
+                ),
+            }),
+        )
+
+    async def async_step_lights(
+        self, user_input: dict[str, Any] | None = None
+    ) -> config_entries.FlowResult:
+        if user_input is not None:
+            self._data.update(user_input)
             coordinator = self.hass.data[DOMAIN][self.entry.entry_id].get("coordinator")
             if coordinator:
-                from .coordinator import _current_slot  # noqa: F401
                 coordinator.update_config(
                     profiles={
                         CONF_PROFILE_MORNING: self._data.get(CONF_PROFILE_MORNING, DEFAULT_PROFILE_MORNING),
@@ -203,14 +244,23 @@ class SimulatedEnergyMeterOptionsFlow(config_entries.OptionsFlow):
                     presence_persons=self._data.get(CONF_PRESENCE_PERSONS, []),
                     presence_extra_watts=self._data.get(CONF_PRESENCE_EXTRA_WATTS, DEFAULT_PRESENCE_EXTRA_WATTS),
                     presence_away_factor=self._data.get(CONF_PRESENCE_AWAY_FACTOR, DEFAULT_PRESENCE_AWAY_FACTOR),
+                    light_entities=self._data.get(CONF_LIGHT_ENTITIES, []),
+                    light_watts=self._data.get(CONF_LIGHT_WATTS, DEFAULT_LIGHT_WATTS),
                 )
             return self.async_create_entry(title="", data=self._data)
 
         return self.async_show_form(
-            step_id="plugs",
+            step_id="lights",
             data_schema=vol.Schema({
-                vol.Optional(CONF_POWER_SENSORS, default=self._get(CONF_POWER_SENSORS, [])): selector.EntitySelector(
-                    selector.EntitySelectorConfig(domain="sensor", device_class="power", multiple=True)
+                vol.Optional(CONF_LIGHT_ENTITIES, default=self._get(CONF_LIGHT_ENTITIES, [])): selector.EntitySelector(
+                    selector.EntitySelectorConfig(domain="light", multiple=True)
+                ),
+                vol.Required(CONF_LIGHT_WATTS, default=self._get(CONF_LIGHT_WATTS, DEFAULT_LIGHT_WATTS)): selector.NumberSelector(
+                    selector.NumberSelectorConfig(
+                        min=0, max=500, step=1,
+                        unit_of_measurement="W",
+                        mode=selector.NumberSelectorMode.BOX,
+                    )
                 ),
             }),
         )
